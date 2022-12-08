@@ -175,7 +175,7 @@ public class SeckillServiceImpl implements SeckillService {
      * 在 mybatis 的xml中调用 存储过程 定义id=killByProcedure
      */
     public SeckillExecution executeSeckillProcedure(long seckillId, long userPhone, String md5) {
-        if (md5 == null || !md5.equals(getMD5(seckillId))) {
+        if (md5 == null || !md5.equals(getMD5(seckillId))) {  // 验证秒杀 接口中 MD5 是否对应
             return new SeckillExecution(seckillId, SeckillStateEnum.DATE_REWRITE);
         }
         Date killTime = new Date();
@@ -203,9 +203,6 @@ public class SeckillServiceImpl implements SeckillService {
 
     /**
      * 使用Spring工具类实现md5加密
-     *
-     * @param seckillId
-     * @return
      */
     private String getMD5(long seckillId) {
         String base = seckillId + "/" + salt;

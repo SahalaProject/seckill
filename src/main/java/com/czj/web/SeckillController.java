@@ -58,9 +58,7 @@ public class SeckillController {
     }
 
     //ajax、json暴露秒杀接口
-    @RequestMapping(value = "/{seckillId}/exposer",
-            method = RequestMethod.GET,
-            produces = {"application/json;charset=UTF-8"})
+    @RequestMapping(value = "/{seckillId}/exposer", method = RequestMethod.GET, produces = {"application/json;charset=UTF-8"})
     @ResponseBody
     public SeckillResult<Exposer> exposer(@PathVariable("seckillId") Long seckillId) {
         SeckillResult<Exposer> result;
@@ -75,9 +73,7 @@ public class SeckillController {
     }
 
     //执行秒杀过程
-    @RequestMapping(value = "/{seckillId}/{md5}/execution",
-            method = RequestMethod.POST,
-            produces = {"application/json;charset=UTF-8"})
+    @RequestMapping(value = "/{seckillId}/{md5}/execution", method = RequestMethod.POST, produces = {"application/json;charset=UTF-8"})
     @ResponseBody
     public SeckillResult<SeckillExecution> execute(@PathVariable("seckillId") Long seckillId,
                                                    @PathVariable("md5") String md5,

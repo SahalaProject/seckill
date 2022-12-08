@@ -10,7 +10,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 /**
- * 秒杀 redis
+ * 秒杀链接 redis 缓存
  */
 
 public class RedisDao {
