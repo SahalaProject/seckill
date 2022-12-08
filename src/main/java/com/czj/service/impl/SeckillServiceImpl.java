@@ -128,14 +128,6 @@ public class SeckillServiceImpl implements SeckillService {
      * 优化点
      * 先添加购买明细再减库存
      * 减少事务中行级锁的持有时间
-     *
-     * @param seckillId
-     * @param userPhone
-     * @param md5
-     * @return
-     * @throws SeckillException
-     * @throws RepeatKillException
-     * @throws SeckillCloseException
      */
     @Transactional
     public SeckillExecution executeSeckill(long seckillId, long userPhone, String md5)
@@ -147,7 +139,7 @@ public class SeckillServiceImpl implements SeckillService {
         Date nowTime = new Date();
         /*
           将 减库存 插入购买明细  提交
-          改为 插入购买明细 减库存 提交
+          改为 插入购买明细 减库存 提交；  先insert 再 update
           降低了网络延迟和GC影响，同时减少了rowLock的时间
          */
         try {
@@ -169,10 +161,8 @@ public class SeckillServiceImpl implements SeckillService {
                     return new SeckillExecution(seckillId, SeckillStateEnum.SUCCESS, successKilled);
                 }
             }
-        } catch (SeckillCloseException e1) {
+        } catch (SeckillCloseException | RepeatKillException e1) {
             throw e1;
-        } catch (RepeatKillException e2) {
-            throw e2;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             // 将编译期异常转化为运行期异常
@@ -180,6 +170,10 @@ public class SeckillServiceImpl implements SeckillService {
         }
     }
 
+    /**
+     * 使用存储过程 进行秒杀
+     * 在 mybatis 的xml中调用 存储过程 定义id=killByProcedure
+     */
     public SeckillExecution executeSeckillProcedure(long seckillId, long userPhone, String md5) {
         if (md5 == null || !md5.equals(getMD5(seckillId))) {
             return new SeckillExecution(seckillId, SeckillStateEnum.DATE_REWRITE);
@@ -189,14 +183,14 @@ public class SeckillServiceImpl implements SeckillService {
         map.put("seckillId", seckillId);
         map.put("phone", userPhone);
         map.put("killTime", killTime);
-        map.put("result", null);
-        // 执行储存过程,result被复制
+        map.put("result", null);  // 当存储过程执行完 会给result赋值
+        // 执行储存过程
         try {
-            seckillDao.killByProcedure(map);
+            seckillDao.killByProcedure(map);  // killByProcedure 在 src/main/resources/mappers/SeckillDao.xml 中定义的
             // 获取result
-            int result = MapUtils.getInteger(map, "result", -2);
+            int result = MapUtils.getInteger(map, "result", -2);  // 没拿到默认 -2
             if (result == 1) {
-                SuccessKilled successKilled = successKilledDao.queryByIdWithSeckill(seckillId, userPhone);
+                SuccessKilled successKilled = successKilledDao.queryByIdWithSeckill(seckillId, userPhone);  // 查到秒杀成功的
                 return new SeckillExecution(seckillId, SeckillStateEnum.SUCCESS, successKilled);
             } else {
                 return new SeckillExecution(seckillId, SeckillStateEnum.stateOf(result));
